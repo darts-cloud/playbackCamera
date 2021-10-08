@@ -1,0 +1,5 @@
+/.pytest_cache
+/.vscode
+/build
+/websocketServer.py
+/__pycache__
