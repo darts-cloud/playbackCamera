@@ -4,13 +4,13 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['C:\\project\\saituyo\\Dropbox\\playbackCamera\\playbackCamera'],
+             pathex=['C:\\project\\saituyo\\Dropbox\\playbackCamera'],
              binaries=[],
              datas=[],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
-             excludes=['pandas', 'PyQt5', 'tkinter', 'sklearn', 'speech_recognition'],
+             excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,

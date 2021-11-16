@@ -97,8 +97,9 @@ class OpenGLPlayer():
 			writer = cv2.VideoWriter(fileName.format(ymd, str(i)), codec, self.fps, (self.VIDEO_WIDTH, self.VIDEO_HEIGHT))
 			self.writers.append(writer)
 
-		writer = cv2.VideoWriter(fileName.format(ymd, "all"), codec, self.fps, (self.sizeW, self.sizeH))
-		self.writers.append(writer)
+		if len(self.captures) >= 2:
+			writer = cv2.VideoWriter(fileName.format(ymd, "all"), codec, self.fps, (self.sizeW, self.sizeH))
+			self.writers.append(writer)
 
 	def start(self):
 		self.fpsTimer = fpstimer.FPSTimer(self.fps)
@@ -212,11 +213,12 @@ class OpenGLPlayer():
 		black = (0, 0, 0)
 		for i, queue in enumerate( self.queues ):
 			try:
-				qs = queue.qsize()
-				text = "{} frames in array".format(qs)
 				frame = queue.get_nowait()[1]
-				cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
-				cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
+				# debug
+				# qs = queue.qsize()
+				# text = "{} frames in array".format(qs)
+				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
+				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 
 				frames.append(frame)
 			except queue.Empty:
@@ -226,12 +228,12 @@ class OpenGLPlayer():
 		allimg = self.concatImage(frames)
 		if self.GlidLineFlg:
 			alpha = 0.2
-			# allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
+			allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
 			allimg = self.drawGlidLine(allimg)
 
 		self.show(frames, allimg)
 
-		if len(self.captures) > 1:
+		if len(self.captures) >= 2:
 			frames.append(allimg)
 
 		self.save(frames)

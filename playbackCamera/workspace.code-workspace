@@ -1,28 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "../.."
-		},
-		{
 			"path": ".."
-		},
-		{
-			"path": "../../steeldarts"
-		},
-		{
-			"path": "../../opencv-steel-darts-master"
-		},
-		{
-			"path": "../../playbackCamera2"
-		},
-		{
-			"path": "../../person"
-		},
-		{
-			"path": "../../keras-yolo3"
-		},
-		{
-			"path": "../../yolov5"
 		}
 	],
 	"settings": {}

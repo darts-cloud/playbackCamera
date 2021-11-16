@@ -15,12 +15,13 @@ class ThreadingVideoCapture:
 	"""コンストラクタ"""
 	def __init__(self, src, max_queue_size=256):
 		self.src = src
+		print("Connect:" + src)
 		self.video = cv2.VideoCapture(src)
 		if not self.video.isOpened():
-			print("Connect Error:" + src)
+			print("Connect Error.")
 			return
 
-		print("Connected:" + src)
+		print("Connected.")
 		self.q = queue.Queue(maxsize=max_queue_size)
 		self.stopped = False
 		self.fpsCount = CountFps()
