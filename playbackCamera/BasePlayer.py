@@ -30,6 +30,7 @@ class BasePlayer():
 	INI_SIZE_W = "size_w"
 	INI_SIZE_H = "size_h"
 	INI_GRID_LINE = "grid_line"
+	INI_SAVE_MOVIE = "save_movie"
 	def __init__(self):
 		logging.debug("__init__ start")
 		self.loadIniFile()
@@ -50,7 +51,8 @@ class BasePlayer():
 		self.initVideoSoruce()
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
-		self.createWriter()
+		if self.saveMovie:
+			self.createWriter()
 		logging.debug("__init__ end")
 	
 	def loadIniFile(self):
@@ -64,7 +66,11 @@ class BasePlayer():
 		self.srcs = config.get(self.INI_SECTION, self.INI_CAMERA)
 		self.sizeW = int(config.get(self.INI_SECTION, self.INI_SIZE_W))
 		self.sizeH = int(config.get(self.INI_SECTION, self.INI_SIZE_H))
-		self.GlidLineFlg = bool(config.get(self.INI_SECTION, self.INI_GRID_LINE))
+		if int(config.get(self.INI_SECTION, self.INI_GRID_LINE)) == 1:
+			self.GlidLineFlg = True
+		self.saveMovie = False
+		if int(config.get(self.INI_SECTION, self.INI_SAVE_MOVIE)) == 1:
+			self.saveMovie = True
 
 	def initVideoSoruce(self):
 		self.captures = []
@@ -271,4 +277,5 @@ class BasePlayer():
 		if len(self.captures) >= 2:
 			frames.append(allimg)
 
-		self.save(frames)
+		if self.saveMovie:
+			self.save(frames)
