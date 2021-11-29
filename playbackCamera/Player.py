@@ -10,9 +10,6 @@ import queue
 import sys
 from playbackCamera.CountFps import *
 from screeninfo import get_monitors
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
 import fpstimer
 
 from enum import Enum
