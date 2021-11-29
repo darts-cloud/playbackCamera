@@ -3,7 +3,7 @@ import queue
 import numpy as np
 import cv2
 import time
-from playbackCamera.CountFps import *
+from CountFps import *
 
 def main():
 	# cam = OpenGLPlayer()
