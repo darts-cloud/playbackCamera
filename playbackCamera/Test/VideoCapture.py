@@ -5,14 +5,6 @@ import cv2
 import time
 from CountFps import *
 
-def main():
-	# cam = OpenGLPlayer()
-	cam = VideoCapture("rtsp://192.168.1.144:8554/unicast") # クッソ遅い
-	cam.update()
-
-if __name__ == "__main__": 
-	main()
-
 """
 映像リソースより最新のフレームを読み込むためのクラス
 FPSが異なる複数リソースにアクセスする場合、
@@ -194,3 +186,11 @@ class ThreadingVideoCapture4(ThreadingVideoCapture3):
 	def __init__(self, src):
 		super().__init__(src)
 		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
+
+def main():
+	# cam = OpenGLPlayer()
+	cam = VideoCapture("rtsp://192.168.1.144:8554/unicast") # クッソ遅い
+	cam.update()
+
+if __name__ == "__main__": 
+	main()
