@@ -19,7 +19,7 @@ class Player(BasePlayer):
 		self.fpsTimer = fpstimer.FPSTimer(self.fps)
 		if self.GlidLineFlg:
 			mask = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
-			self.mask = self.drawGlidLine(mask)
+			self.mask = self._drawGlidLine(mask)
 
 		while(True):
 			key = cv2.waitKey(1) & 0xFF
@@ -52,7 +52,7 @@ class Player(BasePlayer):
 
 		self.endProcess()
 
-	def imshow(self, windowName, img):
+	def _imshow(self, windowName, img):
 		logging.debug("imshow start")
 		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
 		cv2.imshow(windowName, img)

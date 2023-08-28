@@ -58,7 +58,7 @@ class OpenGLPlayer():
 		self.initVideoSoruce()
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
-		self.createWriter()
+		self._createWriter()
 		logging.debug("__init__ end")
 	
 	def loadIniFile(self):
@@ -86,7 +86,7 @@ class OpenGLPlayer():
 					self.captures.append( capture )
 					self.queues.append( queue.Queue(maxsize=frames) )
 
-	def createWriter(self):
+	def _createWriter(self):
 		codec = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') # ファイル形式(ここではmp4)
 		now = datetime.datetime.now()
 		ymd = now.strftime("%Y%m%d%H%M%S")
@@ -114,7 +114,7 @@ class OpenGLPlayer():
 
 		if self.GlidLineFlg:
 			mask = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
-			self.mask = self.drawGlidLine(mask)
+			self.mask = self._drawGlidLine(mask)
 
 		glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS)
 		glutDisplayFunc(self.draw)
@@ -229,7 +229,7 @@ class OpenGLPlayer():
 		if self.GlidLineFlg:
 			alpha = 0.2
 			allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
-			allimg = self.drawGlidLine(allimg)
+			allimg = self._drawGlidLine(allimg)
 
 		self.show(frames, allimg)
 
@@ -238,7 +238,7 @@ class OpenGLPlayer():
 
 		self.save(frames)
 	
-	def drawGlidLine(self, img):
+	def _drawGlidLine(self, img):
 		alpha = 0.3
 		y_step = 40 #高さ方向のグリッド間隔(単位はピクセル)
 		x_step = 40 #幅方向のグリッド間隔(単位はピクセル)

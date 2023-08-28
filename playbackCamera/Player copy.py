@@ -47,7 +47,7 @@ class Player:
 		self.initVideoSoruce()
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
-		self.createWriter()
+		self._createWriter()
 		# self.tw = TimeWeigh()
 		logging.debug("__init__ end")
 	
@@ -63,7 +63,7 @@ class Player:
 					self.captures.append( capture )
 					self.queues.append( queue.Queue(maxsize=frames) )
 
-	def createWriter(self):
+	def _createWriter(self):
 		codec = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') # ファイル形式(ここではmp4)
 		now = datetime.datetime.now()
 		ymd = now.strftime("%Y%m%d%H%M%S")

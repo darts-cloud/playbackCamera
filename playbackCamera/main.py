@@ -3,10 +3,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Player import *
-# from OpenGLPlayer import *
+from OpenGLPlayer import *
 
 def main():
-	# cam = OpenGLPlayer()
+	#cam = OpenGLPlayer()
 	cam = Player() # クッソ遅い
 	cam.start()
 

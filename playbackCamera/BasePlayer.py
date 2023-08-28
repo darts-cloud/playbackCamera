@@ -16,6 +16,9 @@ class Mode(Enum):
 	DISP_3 = 3
 	DISP_4 = 4
 
+'''
+
+'''
 class BasePlayer():
 	DEBUG = True
 	VIDEO_WIDTH = 640
@@ -31,6 +34,7 @@ class BasePlayer():
 	INI_SIZE_H = "size_h"
 	INI_GRID_LINE = "grid_line"
 	INI_SAVE_MOVIE = "save_movie"
+	
 	def __init__(self):
 		logging.debug("__init__ start")
 		self.loadIniFile()
@@ -52,7 +56,7 @@ class BasePlayer():
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
 		if self.saveMovie:
-			self.createWriter()
+			self._createWriter()
 		logging.debug("__init__ end")
 	
 	def loadIniFile(self):
@@ -84,7 +88,7 @@ class BasePlayer():
 					self.captures.append( capture )
 					self.queues.append( queue.Queue(maxsize=frames) )
 
-	def createWriter(self):
+	def _createWriter(self):
 		codec = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') # ファイル形式(ここではmp4)
 		now = datetime.datetime.now()
 		ymd = now.strftime("%Y%m%d%H%M%S")
@@ -164,7 +168,7 @@ class BasePlayer():
 		img = self.resize(img, dsize=(self.dispSizeW, self.dispSizeH))
 		self.img = img
 		# 高解像度で表示すると描画が遅いことが判明
-		self.imshow('frame', img)
+		self._imshow('frame', img)
 		logging.debug("show end")
 
 	def resize(self, img, dsize):
@@ -176,7 +180,7 @@ class BasePlayer():
 		logging.debug("resize end")
 		return img
 
-	def drawGlidLine(self, img):
+	def _drawGlidLine(self, img):
 		alpha = 0.3
 		y_step = 40 #高さ方向のグリッド間隔(単位はピクセル)
 		x_step = 40 #幅方向のグリッド間隔(単位はピクセル)
@@ -236,7 +240,7 @@ class BasePlayer():
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
-			self.imshow('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 
 		if self.queues[0].qsize() < int(self.fps * self.delayTime):
@@ -245,7 +249,7 @@ class BasePlayer():
 			str = "Now loading please wait..."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
-			self.imshow('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 		
 		# Queueより動画を取得
@@ -270,7 +274,7 @@ class BasePlayer():
 		if self.GlidLineFlg:
 			alpha = 0.2
 			allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
-			allimg = self.drawGlidLine(allimg)
+			allimg = self._drawGlidLine(allimg)
 
 		self.show(frames, allimg)
 

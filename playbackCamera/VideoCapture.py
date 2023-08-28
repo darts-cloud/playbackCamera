@@ -14,8 +14,10 @@ class ThreadingVideoCapture:
 
 	"""コンストラクタ"""
 	def __init__(self, src, max_queue_size=256):
-		self.src = src
 		print("Connect:" + src)
+		if self._isCameraNo(src):
+			src = int(src, 10)
+		self.src = src
 		self.video = cv2.VideoCapture(src)
 		if not self.video.isOpened():
 			print("Connect Error.")
@@ -93,6 +95,14 @@ class ThreadingVideoCapture:
 	"""OpenCvで取得できる映像リソース情報を返す。"""
 	def get(self, i):
 		return self.video.get(i)
+	
+	def _isCameraNo(self, s):  # 整数値を表しているかどうかを判定
+		try:
+			int(s, 10)  # 文字列を実際にint関数で変換してみる
+		except ValueError:
+			return False
+		else:
+			return True
 
 """
 映像リソースより最新のフレームを読み込むためのクラス
