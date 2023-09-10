@@ -42,10 +42,10 @@ class Player(BasePlayer):
 			self.fpsCount.CountFrame()
 			
 			# 動画をキューに登録
-			self.addQueue()
+			self._addQueue()
 			
 			# キューに入れた（遅延した）動画を使用
-			self.useQueue()
+			self._useQueue()
 
 		for i, capture in enumerate( self.captures ):
 			capture.release()

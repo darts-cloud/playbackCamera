@@ -108,22 +108,22 @@ class Player:
 			self.fpsCount.CountFrame()
 			
 			# 動画をキューに登録
-			self.addQueue()
+			self._addQueue()
 			
 			# キューに入れた（遅延した）動画を使用
-			self.useQueue()
+			self._useQueue()
 
 		for i, capture in enumerate( self.captures ):
 			capture.release()
 
 		self.endProcess()
 
-	def addQueue(self):
+	def _addQueue(self):
 		for i, capture in enumerate( self.captures ):
 			if not self.queues[i].full():
 				self.queues[i].put(capture.read())
 
-	def useQueue(self):
+	def _useQueue(self):
 
 		if self.queues[0].qsize() < int(self.CONST_FPS * self.delayTime):
 			# 読み込み中
@@ -154,22 +154,22 @@ class Player:
 		img_tmp = np.zeros((sizeH, sizeW, 3)).astype('uint8')
 		img1 = self.resize(frames[0][1], dsize=(sizeW, sizeH))
 		img2 = self.resize(frames[1][1], dsize=(sizeW, sizeH))
-		im_h1 = self.hconcat([img1, img2])
+		im_h1 = self._hconcat([img1, img2])
 		# self.tw.weigh("2")
 		if len(frames) > 2:
 			img3 = self.resize(frames[2][1], dsize=(sizeW, sizeH))
 			if len(frames) == 3:
-				im_h2 = self.hconcat([img3, img_tmp])
+				im_h2 = self._hconcat([img3, img_tmp])
 				# self.tw.weigh("3")
 			else:
 				img4 = self.resize(frames[3][1], dsize=(sizeW, sizeH))
-				im_h2 = self.hconcat([img3, img4])
+				im_h2 = self._hconcat([img3, img4])
 				# self.tw.weigh("3")
-			img = self.vconcat([im_h1, im_h2])
+			img = self._vconcat([im_h1, im_h2])
 			# self.tw.weigh("4")
 		else:
-			im_h2 = self.hconcat([img_tmp, img_tmp])
-			img = self.vconcat([im_h1, im_h2])
+			im_h2 = self._hconcat([img_tmp, img_tmp])
+			img = self._vconcat([im_h1, im_h2])
 			# img = im_h1
 			# self.tw.weigh("3")
 		logging.debug("concatImage end")
@@ -181,18 +181,18 @@ class Player:
 		logging.debug("resize end")
 		return img
 
-	def hconcat(self, imgs):
-		logging.debug("hconcat start")
+	def _hconcat(self, imgs):
+		logging.debug("_hconcat start")
 		img = cv2.hconcat(imgs)
 		# img = np.hstack(imgs)
-		logging.debug("hconcat end")
+		logging.debug("_hconcat end")
 		return img
 
-	def vconcat(self, imgs):
-		logging.debug("vconcat start")
+	def _vconcat(self, imgs):
+		logging.debug("_vconcat start")
 		img = cv2.vconcat(imgs)
 		# img = np.vstack(imgs)
-		logging.debug("vconcat end")
+		logging.debug("_vconcat end")
 		return img
 
 	def imshow(self, windowName, img):
@@ -263,10 +263,10 @@ class Camera2(Player):
 	def __init__(self):
 		super().__init__()
 	"""
-	# 	def hconcat(self, imgs):
-	# 		return cv2.hconcat(imgs)
+	# 	def _hconcat(self, imgs):
+	# 		return cv2._hconcat(imgs)
 
-	# 	def vconcat(self, imgs):
+	# 	def _vconcat(self, imgs):
 	# 		return cv2.vconcat(imgs)
 
 	# 	def show(self, frames, allimg):	
@@ -321,7 +321,7 @@ class SyncCamera():
 						self.syncTime(tm, self.queues[i])
 
 			if len(self.queues) > 1:
-				im_h = cv2.hconcat([self.queues[0].get()[1], self.queues[1].get()[1]])
+				im_h = cv2._hconcat([self.queues[0].get()[1], self.queues[1].get()[1]])
 				# print(str(self.queues[0].qsize()) + ":" + str(self.queues[1].qsize()))
 			else:
 				im_h = self.queues[0].get()[1]

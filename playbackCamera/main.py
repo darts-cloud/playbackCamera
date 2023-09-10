@@ -3,10 +3,12 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Player import *
-from OpenGLPlayer import *
+# from OpenGLPlayer import *
+from MediaPipePlayer_pose import *
 
 def main():
 	#cam = OpenGLPlayer()
+	# cam = MediaPipePlayer_Pose() # クッソ遅い
 	cam = Player() # クッソ遅い
 	cam.start()
 

@@ -138,10 +138,10 @@ class OpenGLPlayer():
 		self.fpsCount.CountFrame()
 
 		# 動画をキューに登録
-		self.addQueue()
+		self._addQueue()
 		
 		# キューに入れた（遅延した）動画を使用
-		self.useQueue()
+		self._useQueue()
 
 	def idle(self):
 		glutPostRedisplay()
@@ -177,7 +177,7 @@ class OpenGLPlayer():
 			self.Mode = Mode.DISP_4
 		logging.debug("keyboard end")
 
-	def addQueue(self):
+	def _addQueue(self):
 		for i, capture in enumerate( self.captures ):
 			if not self.queues[i].full():
 				try:
@@ -186,7 +186,7 @@ class OpenGLPlayer():
 				except queue.Full:
 					pass
 
-	def useQueue(self):
+	def _useQueue(self):
 
 		if len(self.queues) <= 0:
 			# 読み込み中
@@ -277,18 +277,18 @@ class OpenGLPlayer():
 		img2 = self.resize(frames[1], dsize=(sizeW, sizeH))
 		h, w, channels = img1.shape[:3]
 		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
-		im_h1 = self.hconcat([img1, img2])
+		im_h1 = self._hconcat([img1, img2])
 		if len(frames) > 2:
 			img3 = self.resize(frames[2], dsize=(sizeW, sizeH))
 			if len(frames) == 3:
-				im_h2 = self.hconcat([img3, img_tmp])
+				im_h2 = self._hconcat([img3, img_tmp])
 			else:
 				img4 = self.resize(frames[3], dsize=(sizeW, sizeH))
-				im_h2 = self.hconcat([img3, img4])
-			img = self.vconcat([im_h1, im_h2])
+				im_h2 = self._hconcat([img3, img4])
+			img = self._vconcat([im_h1, im_h2])
 		else:
-			im_h2 = self.hconcat([img_tmp, img_tmp])
-			img = self.vconcat([im_h1, im_h2])
+			im_h2 = self._hconcat([img_tmp, img_tmp])
+			img = self._vconcat([im_h1, im_h2])
 			# img = im_h1
 		logging.debug("concatImage end")
 		return img
@@ -392,16 +392,16 @@ class OpenGLPlayer():
 		logging.debug("resize end")
 		return img
 
-	def hconcat(self, imgs):
-		logging.debug("hconcat start")
+	def _hconcat(self, imgs):
+		logging.debug("_hconcat start")
 		img = cv2.hconcat(imgs)
 		# img = np.hstack(imgs)
-		logging.debug("hconcat end")
+		logging.debug("_hconcat end")
 		return img
 
-	def vconcat(self, imgs):
-		logging.debug("vconcat start")
+	def _vconcat(self, imgs):
+		logging.debug("_vconcat start")
 		img = cv2.vconcat(imgs)
 		# img = np.vstack(imgs)
-		logging.debug("vconcat end")
+		logging.debug("_vconcat end")
 		return img

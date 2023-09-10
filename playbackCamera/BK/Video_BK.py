@@ -121,11 +121,11 @@ class CameraV3():
 			
 			# for i, frame in enumerate( frames ):
 			# 	cv2.imshow( 'frame' + str(i), frame )
-			# im_h = cv2.hconcat(frames)
+			# im_h = cv2._hconcat(frames)
 			im_h = cv2.hconcat([frames[0], frames[1]])
 			cv2.imshow( 'frame', im_h )
 
-			# cv2.imwrite('data/dst/opencv_hconcat.jpg', im_h)
+			# cv2.imwrite('data/dst/opencv__hconcat.jpg', im_h)
 
 		capture.release()
 		cv2.destroyAllWindows()
@@ -171,7 +171,7 @@ class CameraV3_2():
 				break
 			
 			# 動画をキューに登録
-			self.addQueue()
+			self._addQueue()
 			
 			# キューに登録した動画を再生
 			self.showImage()
@@ -181,7 +181,7 @@ class CameraV3_2():
 
 		cv2.destroyAllWindows()
 
-	def addQueue(self):
+	def _addQueue(self):
 		for i, capture in enumerate( self.captures ):
 			if not self.queues[i].full():
 				self.queues[i].put(capture.read())
@@ -216,7 +216,7 @@ class CameraV3_2():
 		# 			self.syncTime(tm, self.queues[i])
 
 		if len(self.queues) > 1:
-			im_h = cv2.hconcat([self.queues[0].get()[1], self.queues[1].get()[1]])
+			im_h = cv2._hconcat([self.queues[0].get()[1], self.queues[1].get()[1]])
 			# print(str(self.queues[0].qsize()) + ":" + str(self.queues[1].qsize()))
 		else:
 			im_h = self.queues[0].get()[1]
