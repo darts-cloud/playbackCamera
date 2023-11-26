@@ -6,8 +6,10 @@ class PerfomanceTestPlayer(BasePlayer):
 		super().__init__()
 		self.conf.saveMovie = False
 
-	def _drawGlidLine(self, img):
-		return img
+class PerfomanceTestPlayer2(PerfomanceTestPlayer):
+
+	def __init__(self):
+		super().__init__()
 
 	def _useQueue(self):
 		logging.debug("_useQueue start")
@@ -63,3 +65,12 @@ class PerfomanceTestPlayer(BasePlayer):
 		# 高解像度で表示すると描画が遅いことが判明
 		self._imshow('frame', img)
 		logging.debug("show end")
+
+class PerfomanceTestPlayer3(PerfomanceTestPlayer2):
+
+	def __init__(self):
+		super().__init__()
+		self.conf.saveMovie = False
+
+	def _drawGlidLine(self, img):
+		return img

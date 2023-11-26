@@ -29,7 +29,8 @@ class BasePlayer():
 		self.stopped = False
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
-
+		self.imshowed = False
+		
 		self._initVideoSoruce()
 		if self.conf.saveMovie:
 			self._createWriter()
@@ -103,7 +104,7 @@ class BasePlayer():
 			if (self.Mode == Mode.ALL):
 				pass
 			else:
-				img = self.__resize(frames[int(self.Mode)], dsize=(self.conf.sizeW, self.conf.sizeH))
+				img = frames[int(self.Mode)]
 		except IndexError as ie:
 			pass
 
@@ -117,6 +118,8 @@ class BasePlayer():
 
 		fps2 = self.fpsCount.CountFps()
 		
+		img = self._resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
+
 		height, width, channels = img.shape[:3]
 		white = (255, 255, 255)
 		# cv2.putText(img, "{:.2f} fps".format(fps1), (  0, height - 35), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
@@ -125,7 +128,6 @@ class BasePlayer():
 		# cv2.putText(img, "{:.2f} fps".format(fps1), (  0, height - 35), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 		cv2.putText(img, "{:.2f} fps".format(fps2), (  0, height -  60), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 
-		img = self.__resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
 		self.img = img
 		# 高解像度で表示すると描画が遅いことが判明
 		self._imshow('frame', img)
@@ -220,7 +222,9 @@ class BasePlayer():
 
 	def _imshow(self, windowName, img):
 		logging.debug("imshow start")
-		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
+		if self.imshowed == False:
+			cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
+		self.imshowed = True
 		cv2.imshow(windowName, img)
 		logging.debug("imshow end")
 
@@ -232,6 +236,15 @@ class BasePlayer():
 				writer.release()
 		
 		cv2.destroyAllWindows()
+	
+	def _resize(self, img, dsize):
+		logging.debug("_resize start")
+		# aspect_ratio = float(img.shape[1])/float(img.shape[0])
+		# window_width = dsize[1]/aspect_ratio
+		# img = cv2.resize(img, (int(dsize[1]),int(window_width)))	
+		img = cv2.resize(img, dsize, interpolation=cv2.INTER_LINEAR)
+		logging.debug("_resize end")
+		return img
 
 	def _debug(self, mes):
 		if self.DEBUG:
@@ -241,21 +254,23 @@ class BasePlayer():
 	def __concatImage(self, frames, sizeW, sizeH):
 		logging.debug("__concatImage start")
 		if len(frames) <= 1:
-			return self.__resize(frames[0], dsize=(sizeW, sizeH))
+			img = self._resize(frames[0], dsize=(sizeW, sizeH))
+			logging.debug("__concatImage end")
+			return img
 		
 		harfSizeH = (int(self.conf.sizeH / 2))
 		harfSizeW = (int(self.conf.sizeW / 2))
-		img1 = self.__resize(frames[0], dsize=(harfSizeW, harfSizeH))
-		img2 = self.__resize(frames[1], dsize=(harfSizeW, harfSizeH))
+		img1 = self._resize(frames[0], dsize=(harfSizeW, harfSizeH))
+		img2 = self._resize(frames[1], dsize=(harfSizeW, harfSizeH))
 		h, w, channels = img1.shape[:3]
 		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
 		im_h1 = self.__hconcat([img1, img2])
 		if len(frames) > 2:
-			img3 = self.__resize(frames[2], dsize=(harfSizeW, harfSizeH))
+			img3 = self._resize(frames[2], dsize=(harfSizeW, harfSizeH))
 			if len(frames) == 3:
 				im_h2 = self.__hconcat([img3, img_tmp])
 			else:
-				img4 = self.__resize(frames[3], dsize=(harfSizeW, harfSizeH))
+				img4 = self._resize(frames[3], dsize=(harfSizeW, harfSizeH))
 				im_h2 = self.__hconcat([img3, img4])
 			img = self.__vconcat([im_h1, im_h2])
 		else:
@@ -277,15 +292,6 @@ class BasePlayer():
 		img = cv2.vconcat(imgs)
 		# img = np.vstack(imgs)
 		logging.debug("__vconcat end")
-		return img
-	
-	def _resize(self, img, dsize):
-		logging.debug("__resize start")
-		# aspect_ratio = float(img.shape[1])/float(img.shape[0])
-		# window_width = dsize[1]/aspect_ratio
-		# img = cv2.resize(img, (int(dsize[1]),int(window_width)))	
-		img = cv2.resize(img, dsize, interpolation=cv2.INTER_LINEAR)
-		logging.debug("__resize end")
 		return img
 	
 	def __save(self, frames):
