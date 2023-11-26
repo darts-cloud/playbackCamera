@@ -16,48 +16,6 @@ import mediapipe as mp
 from enum import Enum
 class MediaPipePlayer(Player):
 
-	def start(self):
-		self.fpsTimer = fpstimer.FPSTimer(self.fps)
-		if self.GlidLineFlg:
-			mask = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
-			self.mask = self._drawGlidLine(mask)
-
-		while(True):
-			key = cv2.waitKey(1) & 0xFF
-			if key == ord(' '):
-				break
-			elif key == ord('0'):
-				self.Mode = Mode.ALL
-			elif key == ord('1'):
-				self.Mode = Mode.DISP_1
-			elif key == ord('2'):
-				self.Mode = Mode.DISP_2
-			elif key == ord('3'):
-				self.Mode = Mode.DISP_3
-			elif key == ord('4'):
-				self.Mode = Mode.DISP_4
-			
-			self.fpsTimer.sleep()
-
-			# Fps計算用にフレーム計算
-			self.fpsCount.CountFrame()
-			
-			# 動画をキューに登録
-			self._addQueue()
-			
-			# キューに入れた（遅延した）動画を使用
-			self._useQueue()
-
-		for i, capture in enumerate( self.captures ):
-			capture.release()
-
-		self._endProcess()
-
-	def _showMessage(self, windowName, img):
-		logging.debug("imshow start")
-		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
-		cv2.imshow(windowName, img)
-		logging.debug("imshow end")
 
 	def _useQueue(self):
 
@@ -68,7 +26,7 @@ class MediaPipePlayer(Player):
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
-			self._showMessage('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 
 		if self.queues[0].qsize() < int(self.fps * self.delayTime):
@@ -77,7 +35,7 @@ class MediaPipePlayer(Player):
 			str = "Now loading please wait..."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
-			self._showMessage('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 		
 		# Queueより動画を取得

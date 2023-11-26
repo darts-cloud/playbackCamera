@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.DEBUG)
 from screeninfo import get_monitors
 from enum import IntEnum
 import fpstimer
@@ -8,6 +8,7 @@ import configparser
 import queue
 import sys
 import datetime
+from Settings import *
 
 class Mode(IntEnum):
 	ALL = 99
@@ -21,49 +22,21 @@ class Mode(IntEnum):
 '''
 class BasePlayer():
 	DEBUG = True
-	VIDEO_WIDTH = 640
-	VIDEO_HEIGHT = 480
-	INI_SECTION = "DEFAULT"
-	INI_CAMERA = "camera"
-	INI_DELAY_TIME = "delay_time"
-	INI_ADJUSTMENT_TIME = "adjustment_time"
-	INI_FPS = "fps"
-	INI_SYNCED_DIFF_TIME = "synced_diff_time"
-	INI_SYNCED_MAX_COUNT = "synced_max_count"
-	INI_SIZE_W = "size_w"
-	INI_SIZE_H = "size_h"
-	INI_GRID_LINE = "grid_line"
-	INI_SAVE_MOVIE = "save_movie"
 	
 	def __init__(self):
 		logging.debug("__init__ start")
-		self._loadIniFile()
+		self.conf = Settings()
 		self.stopped = False
-		self.dispSizeH = None
-		self.dispSizeW = None
-		
-		for m in get_monitors():
-			self.dispSizeH = m.height
-			self.dispSizeW = m.width
-			print(str(m))
-			break
-		
-		if self.dispSizeH is None:
-			self.dispSizeH = self.sizeH
-			self.dispSizeW = self.sizeW
-
-		self._initVideoSoruce()
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
-		if self.saveMovie:
+
+		self._initVideoSoruce()
+		if self.conf.saveMovie:
 			self._createWriter()
 		logging.debug("__init__ end")
 	
 	def start(self):
-		self.fpsTimer = fpstimer.FPSTimer(self.fps)
-		if self.GlidLineFlg:
-			mask = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
-			self.mask = self._drawGlidLine(mask)
+		self.fpsTimer = fpstimer.FPSTimer(self.conf.fps)
 
 		while(True):
 			key = cv2.waitKey(1) & 0xFF
@@ -93,28 +66,11 @@ class BasePlayer():
 
 		self._endProcess()
 
-	def _loadIniFile(self):
-		config = configparser.ConfigParser()
-		config.read("settings.ini")
-		self.delayTime = float(config.get(self.INI_SECTION, self.INI_DELAY_TIME))
-		self.adjutTime = float(config.get(self.INI_SECTION, self.INI_ADJUSTMENT_TIME))
-		self.fps = int(config.get(self.INI_SECTION, self.INI_FPS))
-		self.syncedDiffTime = float(config.get(self.INI_SECTION, self.INI_SYNCED_DIFF_TIME))
-		self.syncedMaxCount = int(config.get(self.INI_SECTION, self.INI_SYNCED_MAX_COUNT))
-		self.srcs = config.get(self.INI_SECTION, self.INI_CAMERA)
-		self.sizeW = int(config.get(self.INI_SECTION, self.INI_SIZE_W))
-		self.sizeH = int(config.get(self.INI_SECTION, self.INI_SIZE_H))
-		if int(config.get(self.INI_SECTION, self.INI_GRID_LINE)) == 1:
-			self.GlidLineFlg = True
-		self.saveMovie = False
-		if int(config.get(self.INI_SECTION, self.INI_SAVE_MOVIE)) == 1:
-			self.saveMovie = True
-
 	def _initVideoSoruce(self):
 		self.captures = []
 		self.queues = []
-		frames = int(self.fps * (self.delayTime + self.adjutTime))
-		for i, s in enumerate( self.srcs.split(',') ):
+		frames = int(self.conf.fps * (self.conf.delayTime + self.conf.adjutTime))
+		for i, s in enumerate( self.conf.srcs.split(',') ):
 			src = s.strip()
 			if src != "":
 				capture = ThreadingVideoCapture3(src, 1000)
@@ -130,11 +86,11 @@ class BasePlayer():
 		
 		self.writers = []
 		for i, capture in enumerate( self.captures ):
-			writer = cv2.VideoWriter(fileName.format(ymd, str(i)), codec, self.fps, (self.VIDEO_WIDTH, self.VIDEO_HEIGHT))
+			writer = cv2.VideoWriter(fileName.format(ymd, str(i)), codec, self.conf.fps, (self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
 			self.writers.append(writer)
 
 		if len(self.captures) >= 2:
-			writer = cv2.VideoWriter(fileName.format(ymd, "all"), codec, self.fps, (self.sizeW, self.sizeH))
+			writer = cv2.VideoWriter(fileName.format(ymd, "all"), codec, self.conf.fps, (self.conf.sizeW, self.conf.sizeH))
 			self.writers.append(writer)
 
 	def _show(self, frames, allimg):
@@ -147,14 +103,14 @@ class BasePlayer():
 			if (self.Mode == Mode.ALL):
 				pass
 			else:
-				img = self.__resize(frames[int(self.Mode)], dsize=(self.sizeW, self.sizeH))
+				img = self.__resize(frames[int(self.Mode)], dsize=(self.conf.sizeW, self.conf.sizeH))
 		except IndexError as ie:
 			pass
 
 		if img is None:
 			img = allimg
 		
-		if self.GlidLineFlg:
+		if self.conf.glidLineFlg:
 			alpha = 0.2
 			# img = cv2.addWeighted(self.mask, alpha, img, 1 - alpha, 0)
 			img = self._drawGlidLine(img)
@@ -169,10 +125,10 @@ class BasePlayer():
 		# cv2.putText(img, "{:.2f} fps".format(fps1), (  0, height - 35), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 		cv2.putText(img, "{:.2f} fps".format(fps2), (  0, height -  60), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 
-		img = self.__resize(img, dsize=(self.dispSizeW, self.dispSizeH))
+		img = self.__resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
 		self.img = img
 		# 高解像度で表示すると描画が遅いことが判明
-		self._showMessage('frame', img)
+		self._imshow('frame', img)
 		logging.debug("show end")
 
 	def _drawGlidLine(self, img):
@@ -213,24 +169,25 @@ class BasePlayer():
 					pass
 
 	def _useQueue(self):
+		logging.debug("_useQueue start")
 
 		if len(self.queues) <= 0:
 			# 読み込み中
-			im_h = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
+			im_h = np.zeros((self.conf.sizeH, self.conf.sizeW, 3)).astype('uint8')
 			str = "There are no streams that can be displayed."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
-			self._showMessage('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 
-		if self.queues[0].qsize() < int(self.fps * self.delayTime):
+		if self.queues[0].qsize() < int(self.conf.fps * self.conf.delayTime):
 			# 読み込み中
-			im_h = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
+			im_h = np.zeros((self.conf.sizeH, self.conf.sizeW, 3)).astype('uint8')
 			str = "Now loading please wait..."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
-			self._showMessage('frame', im_h)
+			self._imshow('frame', im_h)
 			return
 		
 		# Queueより動画を取得
@@ -251,21 +208,21 @@ class BasePlayer():
 				pass
 			
 		# 動画を表示
-		allimg = self.__concatImage(frames)
+		allimg = self.__concatImage(frames, self.conf.sizeW, self.conf.sizeH)
 		self._show(frames, allimg)
 
 		if len(self.captures) >= 2:
 			frames.append(allimg)
 
-		if self.saveMovie:
+		if self.conf.saveMovie:
 			self.__save(frames)
+		logging.debug("_useQueue end")
 
-	def _showMessage(self, windowName, img):
+	def _imshow(self, windowName, img):
 		logging.debug("imshow start")
 		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
 		cv2.imshow(windowName, img)
 		logging.debug("imshow end")
-
 
 	def _endProcess(self):
 		for i, capture in enumerate( self.captures ):
@@ -281,24 +238,24 @@ class BasePlayer():
 			logging.debug(mes)
 			print(mes)
 
-	def __concatImage(self, frames):
+	def __concatImage(self, frames, sizeW, sizeH):
 		logging.debug("__concatImage start")
 		if len(frames) <= 1:
-			return self.__resize(frames[0], dsize=(self.sizeW, self.sizeH))
+			return self.__resize(frames[0], dsize=(sizeW, sizeH))
 		
-		sizeH = (int(self.sizeH / 2))
-		sizeW = (int(self.sizeW / 2))
-		img1 = self.__resize(frames[0], dsize=(sizeW, sizeH))
-		img2 = self.__resize(frames[1], dsize=(sizeW, sizeH))
+		harfSizeH = (int(self.conf.sizeH / 2))
+		harfSizeW = (int(self.conf.sizeW / 2))
+		img1 = self.__resize(frames[0], dsize=(harfSizeW, harfSizeH))
+		img2 = self.__resize(frames[1], dsize=(harfSizeW, harfSizeH))
 		h, w, channels = img1.shape[:3]
 		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
 		im_h1 = self.__hconcat([img1, img2])
 		if len(frames) > 2:
-			img3 = self.__resize(frames[2], dsize=(sizeW, sizeH))
+			img3 = self.__resize(frames[2], dsize=(harfSizeW, harfSizeH))
 			if len(frames) == 3:
 				im_h2 = self.__hconcat([img3, img_tmp])
 			else:
-				img4 = self.__resize(frames[3], dsize=(sizeW, sizeH))
+				img4 = self.__resize(frames[3], dsize=(harfSizeW, harfSizeH))
 				im_h2 = self.__hconcat([img3, img4])
 			img = self.__vconcat([im_h1, im_h2])
 		else:
@@ -322,7 +279,7 @@ class BasePlayer():
 		logging.debug("__vconcat end")
 		return img
 	
-	def __resize(self, img, dsize):
+	def _resize(self, img, dsize):
 		logging.debug("__resize start")
 		# aspect_ratio = float(img.shape[1])/float(img.shape[0])
 		# window_width = dsize[1]/aspect_ratio
