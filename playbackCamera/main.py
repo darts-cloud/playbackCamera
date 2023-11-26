@@ -7,7 +7,7 @@ from Player import *
 from MediaPipePlayer_pose import *
 
 def main():
-	#cam = OpenGLPlayer()
+	# cam = OpenGLPlayer()
 	# cam = MediaPipePlayer_Pose() # クッソ遅い
 	cam = Player() # クッソ遅い
 	cam.start()

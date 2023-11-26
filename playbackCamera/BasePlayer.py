@@ -1,7 +1,7 @@
 import logging
 logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
 from screeninfo import get_monitors
-from enum import Enum
+from enum import IntEnum
 import fpstimer
 from VideoCapture import *
 import configparser
@@ -9,12 +9,12 @@ import queue
 import sys
 import datetime
 
-class Mode(Enum):
-	ALL = 0
-	DISP_1 = 1
-	DISP_2 = 2
-	DISP_3 = 3
-	DISP_4 = 4
+class Mode(IntEnum):
+	ALL = 99
+	DISP_1 = 0
+	DISP_2 = 1
+	DISP_3 = 2
+	DISP_4 = 3
 
 '''
 
@@ -37,7 +37,7 @@ class BasePlayer():
 	
 	def __init__(self):
 		logging.debug("__init__ start")
-		self.loadIniFile()
+		self._loadIniFile()
 		self.stopped = False
 		self.dispSizeH = None
 		self.dispSizeW = None
@@ -52,14 +52,48 @@ class BasePlayer():
 			self.dispSizeH = self.sizeH
 			self.dispSizeW = self.sizeW
 
-		self.initVideoSoruce()
+		self._initVideoSoruce()
 		self.Mode = Mode.ALL
 		self.fpsCount = CountFps()
 		if self.saveMovie:
 			self._createWriter()
 		logging.debug("__init__ end")
 	
-	def loadIniFile(self):
+	def start(self):
+		self.fpsTimer = fpstimer.FPSTimer(self.fps)
+		if self.GlidLineFlg:
+			mask = np.zeros((self.sizeH, self.sizeW, 3)).astype('uint8')
+			self.mask = self._drawGlidLine(mask)
+
+		while(True):
+			key = cv2.waitKey(1) & 0xFF
+			if key == ord(' '):
+				break
+			elif key == ord('0'):
+				self.Mode = Mode.ALL
+			elif key == ord('1'):
+				self.Mode = Mode.DISP_1
+			elif key == ord('2'):
+				self.Mode = Mode.DISP_2
+			elif key == ord('3'):
+				self.Mode = Mode.DISP_3
+			elif key == ord('4'):
+				self.Mode = Mode.DISP_4
+			
+			self.fpsTimer.sleep()
+
+			# Fps計算用にフレーム計算
+			self.fpsCount.CountFrame()
+			
+			# 動画をキューに登録
+			self._addQueue()
+			
+			# キューに入れた（遅延した）動画を使用
+			self._useQueue()
+
+		self._endProcess()
+
+	def _loadIniFile(self):
 		config = configparser.ConfigParser()
 		config.read("settings.ini")
 		self.delayTime = float(config.get(self.INI_SECTION, self.INI_DELAY_TIME))
@@ -76,7 +110,7 @@ class BasePlayer():
 		if int(config.get(self.INI_SECTION, self.INI_SAVE_MOVIE)) == 1:
 			self.saveMovie = True
 
-	def initVideoSoruce(self):
+	def _initVideoSoruce(self):
 		self.captures = []
 		self.queues = []
 		frames = int(self.fps * (self.delayTime + self.adjutTime))
@@ -103,58 +137,28 @@ class BasePlayer():
 			writer = cv2.VideoWriter(fileName.format(ymd, "all"), codec, self.fps, (self.sizeW, self.sizeH))
 			self.writers.append(writer)
 
-	def concatImage(self, frames):
-		logging.debug("concatImage start")
-		if len(frames) <= 1:
-			return self.resize(frames[0], dsize=(self.sizeW, self.sizeH))
-		
-		sizeH = (int(self.sizeH / 2))
-		sizeW = (int(self.sizeW / 2))
-		img1 = self.resize(frames[0], dsize=(sizeW, sizeH))
-		img2 = self.resize(frames[1], dsize=(sizeW, sizeH))
-		h, w, channels = img1.shape[:3]
-		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
-		im_h1 = self._hconcat([img1, img2])
-		if len(frames) > 2:
-			img3 = self.resize(frames[2], dsize=(sizeW, sizeH))
-			if len(frames) == 3:
-				im_h2 = self._hconcat([img3, img_tmp])
-			else:
-				img4 = self.resize(frames[3], dsize=(sizeW, sizeH))
-				im_h2 = self._hconcat([img3, img4])
-			img = self._vconcat([im_h1, im_h2])
-		else:
-			im_h2 = self._hconcat([img_tmp, img_tmp])
-			img = self._vconcat([im_h1, im_h2])
-			# img = im_h1
-		logging.debug("concatImage end")
-		return img
-
-	def show(self, frames, allimg):	
+	def _show(self, frames, allimg):
 		logging.debug("show start")
 		img = None
 		# fps1 = 0
 		fps2 = 0
 		# 押したキーにより、表示を切り替え
 		try:
-			if (self.Mode == Mode.DISP_1):
-				img = frames[0]
-				# fps1 = frames[0][2]
-			elif (self.Mode == Mode.DISP_2):
-				img = frames[1]
-				# fps1 = frames[1][2]
-			elif (self.Mode == Mode.DISP_3):
-				img = frames[2]
-				# fps1 = frames[2][2]
-			elif (self.Mode == Mode.DISP_4):
-				img = frames[3]
-				# fps1 = frames[3][2]
+			if (self.Mode == Mode.ALL):
+				pass
+			else:
+				img = self.__resize(frames[int(self.Mode)], dsize=(self.sizeW, self.sizeH))
 		except IndexError as ie:
 			pass
 
 		if img is None:
 			img = allimg
 		
+		if self.GlidLineFlg:
+			alpha = 0.2
+			# img = cv2.addWeighted(self.mask, alpha, img, 1 - alpha, 0)
+			img = self._drawGlidLine(img)
+
 		fps2 = self.fpsCount.CountFps()
 		
 		height, width, channels = img.shape[:3]
@@ -165,20 +169,11 @@ class BasePlayer():
 		# cv2.putText(img, "{:.2f} fps".format(fps1), (  0, height - 35), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 		cv2.putText(img, "{:.2f} fps".format(fps2), (  0, height -  60), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 
-		img = self.resize(img, dsize=(self.dispSizeW, self.dispSizeH))
+		img = self.__resize(img, dsize=(self.dispSizeW, self.dispSizeH))
 		self.img = img
 		# 高解像度で表示すると描画が遅いことが判明
-		self._imshow('frame', img)
+		self._showMessage('frame', img)
 		logging.debug("show end")
-
-	def resize(self, img, dsize):
-		logging.debug("resize start")
-		# aspect_ratio = float(img.shape[1])/float(img.shape[0])
-		# window_width = dsize[1]/aspect_ratio
-		# img = cv2.resize(img, (int(dsize[1]),int(window_width)))	
-		img = cv2.resize(img, dsize, interpolation=cv2.INTER_LINEAR)
-		logging.debug("resize end")
-		return img
 
 	def _drawGlidLine(self, img):
 		alpha = 0.3
@@ -208,20 +203,6 @@ class BasePlayer():
 
 		return tmp
 
-	def _hconcat(self, imgs):
-		logging.debug("_hconcat start")
-		img = cv2.hconcat(imgs)
-		# img = np.hstack(imgs)
-		logging.debug("_hconcat end")
-		return img
-
-	def _vconcat(self, imgs):
-		logging.debug("_vconcat start")
-		img = cv2.vconcat(imgs)
-		# img = np.vstack(imgs)
-		logging.debug("_vconcat end")
-		return img
-
 	def _addQueue(self):
 		for i, capture in enumerate( self.captures ):
 			if not self.queues[i].full():
@@ -240,7 +221,7 @@ class BasePlayer():
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
-			self._imshow('frame', im_h)
+			self._showMessage('frame', im_h)
 			return
 
 		if self.queues[0].qsize() < int(self.fps * self.delayTime):
@@ -249,7 +230,7 @@ class BasePlayer():
 			str = "Now loading please wait..."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
-			self._imshow('frame', im_h)
+			self._showMessage('frame', im_h)
 			return
 		
 		# Queueより動画を取得
@@ -270,16 +251,86 @@ class BasePlayer():
 				pass
 			
 		# 動画を表示
-		allimg = self.concatImage(frames)
-		if self.GlidLineFlg:
-			alpha = 0.2
-			allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
-			allimg = self._drawGlidLine(allimg)
-
-		self.show(frames, allimg)
+		allimg = self.__concatImage(frames)
+		self._show(frames, allimg)
 
 		if len(self.captures) >= 2:
 			frames.append(allimg)
 
 		if self.saveMovie:
-			self.save(frames)
+			self.__save(frames)
+
+	def _showMessage(self, windowName, img):
+		logging.debug("imshow start")
+		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
+		cv2.imshow(windowName, img)
+		logging.debug("imshow end")
+
+
+	def _endProcess(self):
+		for i, capture in enumerate( self.captures ):
+			capture.release()
+		if self.saveMovie:
+			for i, writer in enumerate( self.writers ):
+				writer.release()
+		
+		cv2.destroyAllWindows()
+
+	def _debug(self, mes):
+		if self.DEBUG:
+			logging.debug(mes)
+			print(mes)
+
+	def __concatImage(self, frames):
+		logging.debug("__concatImage start")
+		if len(frames) <= 1:
+			return self.__resize(frames[0], dsize=(self.sizeW, self.sizeH))
+		
+		sizeH = (int(self.sizeH / 2))
+		sizeW = (int(self.sizeW / 2))
+		img1 = self.__resize(frames[0], dsize=(sizeW, sizeH))
+		img2 = self.__resize(frames[1], dsize=(sizeW, sizeH))
+		h, w, channels = img1.shape[:3]
+		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
+		im_h1 = self.__hconcat([img1, img2])
+		if len(frames) > 2:
+			img3 = self.__resize(frames[2], dsize=(sizeW, sizeH))
+			if len(frames) == 3:
+				im_h2 = self.__hconcat([img3, img_tmp])
+			else:
+				img4 = self.__resize(frames[3], dsize=(sizeW, sizeH))
+				im_h2 = self.__hconcat([img3, img4])
+			img = self.__vconcat([im_h1, im_h2])
+		else:
+			im_h2 = self.__hconcat([img_tmp, img_tmp])
+			img = self.__vconcat([im_h1, im_h2])
+			# img = im_h1
+		logging.debug("__concatImage end")
+		return img
+
+	def __hconcat(self, imgs):
+		logging.debug("__hconcat start")
+		img = cv2.hconcat(imgs)
+		# img = np.hstack(imgs)
+		logging.debug("__hconcat end")
+		return img
+
+	def __vconcat(self, imgs):
+		logging.debug("__vconcat start")
+		img = cv2.vconcat(imgs)
+		# img = np.vstack(imgs)
+		logging.debug("__vconcat end")
+		return img
+	
+	def __resize(self, img, dsize):
+		logging.debug("__resize start")
+		# aspect_ratio = float(img.shape[1])/float(img.shape[0])
+		# window_width = dsize[1]/aspect_ratio
+		# img = cv2.resize(img, (int(dsize[1]),int(window_width)))	
+		img = cv2.resize(img, dsize, interpolation=cv2.INTER_LINEAR)
+		logging.debug("__resize end")
+		return img
+	
+	def __save(self, frames):
+		for i, writer in enumerate( self.writers ):
+			writer.write(frames[i][1]) # 画像を1フレーム分として書き込み

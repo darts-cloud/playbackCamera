@@ -29,7 +29,7 @@ def image_hcombine(im_info1, im_info2):
         w2 = int((h1 / h2) * w1)             # 縦サイズの変化倍率を計算して横サイズを決定する
         img2 = cv2.resize(img2, (w2, h2))    # 画像リサイズ
  
-    img = cv2.hconcat([img1, img2])          # 2つの画像を横方向に連結
+    img = cv2._hconcat([img1, img2])          # 2つの画像を横方向に連結
     return img
  
 # 動画を空間方向に連結させる関数

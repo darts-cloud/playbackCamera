@@ -2,7 +2,7 @@ import cv2
 import time
 
 # カメラを起動する
-video = cv2.VideoCapture("rtsp://192.168.1.113")
+video = cv2.VideoCapture(0)
 # video = cv2.VideoCapture("rtsp://192.168.1.113")
 
 fps = video.get(cv2.CAP_PROP_FPS)

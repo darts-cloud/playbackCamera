@@ -51,9 +51,9 @@ class MediaPipePlayer_Pose(Player):
 		for i, capture in enumerate( self.captures ):
 			capture.release()
 
-		self.endProcess()
+		self._endProcess()
 
-	def _imshow(self, windowName, img):
+	def _showMessage(self, windowName, img):
 		logging.debug("imshow start")
 		cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
 		cv2.imshow(windowName, img)
@@ -68,7 +68,7 @@ class MediaPipePlayer_Pose(Player):
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
-			self._imshow('frame', im_h)
+			self._showMessage('frame', im_h)
 			return
 
 		if self.queues[0].qsize() < int(self.fps * self.delayTime):
@@ -77,7 +77,7 @@ class MediaPipePlayer_Pose(Player):
 			str = "Now loading please wait..."
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
-			self._imshow('frame', im_h)
+			self._showMessage('frame', im_h)
 			return
 		
 		# Queueより動画を取得
@@ -120,13 +120,13 @@ class MediaPipePlayer_Pose(Player):
 				pass
 			
 		# 動画を表示
-		allimg = self.concatImage(frames)
+		allimg = self.__concatImage(frames)
 		if self.GlidLineFlg:
 			alpha = 0.2
 			allimg = cv2.addWeighted(self.mask, alpha, allimg, 1 - alpha, 0)
 			allimg = self._drawGlidLine(allimg)
 
-		self.show(frames, allimg)
+		self._show(frames, allimg)
 
 		if len(self.captures) >= 2:
 			frames.append(allimg)
