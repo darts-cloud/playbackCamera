@@ -162,6 +162,7 @@ class BasePlayer():
 		return tmp
 
 	def _addQueue(self):
+		logging.debug("_addQueue start")
 		for i, capture in enumerate( self.captures ):
 			if not self.queues[i].full():
 				try:
@@ -169,6 +170,7 @@ class BasePlayer():
 					self.queues[i].put_nowait(capture.read())
 				except queue.Full:
 					pass
+		logging.debug("_addQueue end")
 
 	def _useQueue(self):
 		logging.debug("_useQueue start")
@@ -231,7 +233,7 @@ class BasePlayer():
 	def _endProcess(self):
 		for i, capture in enumerate( self.captures ):
 			capture.release()
-		if self.saveMovie:
+		if self.conf.saveMovie:
 			for i, writer in enumerate( self.writers ):
 				writer.release()
 		
@@ -254,14 +256,22 @@ class BasePlayer():
 	def __concatImage(self, frames, sizeW, sizeH):
 		logging.debug("__concatImage start")
 		if len(frames) <= 1:
-			img = self._resize(frames[0], dsize=(sizeW, sizeH))
+			img = frames[0]
+			img = self._resize(img, dsize=(sizeW, sizeH))
 			logging.debug("__concatImage end")
 			return img
 		
+		img1 = frames[0]
+		img2 = frames[1]
 		harfSizeH = (int(self.conf.sizeH / 2))
 		harfSizeW = (int(self.conf.sizeW / 2))
-		img1 = self._resize(frames[0], dsize=(harfSizeW, harfSizeH))
-		img2 = self._resize(frames[1], dsize=(harfSizeW, harfSizeH))
+		height, width, channels = img1.shape[:3]
+		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
+			img1 = self._resize(frames[0], dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+		height, width, channels = img2.shape[:3]
+		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
+			img2 = self._resize(frames[1], dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+
 		h, w, channels = img1.shape[:3]
 		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
 		im_h1 = self.__hconcat([img1, img2])

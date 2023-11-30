@@ -5,13 +5,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Player import *
 from OpenGLPlayer import *
 from MediaPipePlayer_pose import *
-from PerfomanceTestPlayer import *
+from PerfomanceTestPlayer import *	
 
 def main():
 	# cam = OpenGLPlayer()
 	# cam = MediaPipePlayer_Pose() # クッソ遅い
-	# cam = Player() # クッソ遅い
-	cam = PerfomanceTestPlayer()
+	cam = Player() # クッソ遅い
+	# cam = PerfomanceTestPlayer()
 	cam.start()
 
 if __name__ == "__main__": 
