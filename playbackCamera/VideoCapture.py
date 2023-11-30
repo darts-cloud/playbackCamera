@@ -227,3 +227,51 @@ class ThreadingVideoCapture4(ThreadingVideoCapture3):
 	def __init__(self, src, max_queue_size=256):
 		super().__init__(src, max_queue_size)
 		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
+
+
+	""" 
+	ソース元より、常に動画を受け取り、
+	最新の動画のみ、Queueに登録する。
+	別スレッドで実行する。
+	"""
+	def update(self):
+		
+		while True:
+
+			try:
+				if self.stopped:
+					time.sleep(10)
+					self.video = cv2.VideoCapture(self.src)
+					if self.video.isOpened():
+						print("ReConnect.")
+						self.stopped = False
+					continue
+				
+				ret, img = self.video.read()
+				self.fpsCount.CountFrame()
+
+				if not ret:
+					self.stop()
+					print(self.src + ":stop")
+					continue
+				
+				"""
+				OpenCvは内部バッファーを持っている。
+				常に最新のフレームを取得したい場合、
+				このバッファーが邪魔となるため、
+				常に全フレームを読み込み、不要となるフレームを
+				内部的に読み込むことで内部バッファー内の映像を
+				全て吐き出している。
+				"""
+				while not self.q.empty():
+					try:
+						# 常に最新のフレームを読み込む
+						self.q.get_nowait()
+					except queue.Empty:
+						pass
+				
+				times = time.time()
+				fps = self.fpsCount.CountFps()
+				self.q.put([times, img, fps])
+			except Exception:
+				pass
