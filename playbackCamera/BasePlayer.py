@@ -111,14 +111,14 @@ class BasePlayer():
 		if img is None:
 			img = allimg
 		
+		img = self._resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
+
 		if self.conf.glidLineFlg:
 			alpha = 0.2
 			# img = cv2.addWeighted(self.mask, alpha, img, 1 - alpha, 0)
 			img = self._drawGlidLine(img)
 
 		fps2 = self.fpsCount.CountFps()
-		
-		img = self._resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
 
 		height, width, channels = img.shape[:3]
 		white = (255, 255, 255)
@@ -248,6 +248,12 @@ class BasePlayer():
 		logging.debug("_resize end")
 		return img
 
+	def _resizeDefSize(self, img):
+		height, width, channels = img.shape[:3]
+		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
+			img = self._resize(img, dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+		return img
+
 	def _debug(self, mes):
 		if self.DEBUG:
 			logging.debug(mes)
@@ -257,30 +263,21 @@ class BasePlayer():
 		logging.debug("__concatImage start")
 		if len(frames) <= 1:
 			img = frames[0]
-			img = self._resize(img, dsize=(sizeW, sizeH))
+			# img = self._resize(img, dsize=(sizeW, sizeH))
 			logging.debug("__concatImage end")
 			return img
 		
-		img1 = frames[0]
-		img2 = frames[1]
-		harfSizeH = (int(self.conf.sizeH / 2))
-		harfSizeW = (int(self.conf.sizeW / 2))
-		height, width, channels = img1.shape[:3]
-		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
-			img1 = self._resize(frames[0], dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
-		height, width, channels = img2.shape[:3]
-		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
-			img2 = self._resize(frames[1], dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+		img1 = self._resizeDefSize(frames[0])
+		img2 = self._resizeDefSize(frames[1])
 
-		h, w, channels = img1.shape[:3]
-		img_tmp = np.zeros((h, w, 3)).astype(b'uint8')
+		img_tmp = np.zeros((self.conf.VIDEO_HEIGHT, self.conf.VIDEO_WIDTH, 3)).astype(b'uint8')
 		im_h1 = self.__hconcat([img1, img2])
 		if len(frames) > 2:
-			img3 = self._resize(frames[2], dsize=(harfSizeW, harfSizeH))
+			img3 = self._resizeDefSize(frames[2])
 			if len(frames) == 3:
 				im_h2 = self.__hconcat([img3, img_tmp])
 			else:
-				img4 = self._resize(frames[3], dsize=(harfSizeW, harfSizeH))
+				img4 = self._resizeDefSize(frames[3])
 				im_h2 = self.__hconcat([img3, img4])
 			img = self.__vconcat([im_h1, im_h2])
 		else:
