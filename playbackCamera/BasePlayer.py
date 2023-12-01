@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
 from screeninfo import get_monitors
 from enum import IntEnum
 import fpstimer
@@ -183,6 +183,7 @@ class BasePlayer():
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
 			self._imshow('frame', im_h)
+			logging.debug("_useQueue end")
 			return
 
 		if self.queues[0].qsize() < int(self.conf.fps * self.conf.delayTime):
@@ -192,6 +193,7 @@ class BasePlayer():
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			self._imshow('frame', im_h)
+			logging.debug("_useQueue end")
 			return
 		
 		# Queueより動画を取得
@@ -249,9 +251,11 @@ class BasePlayer():
 		return img
 
 	def _resizeDefSize(self, img):
+		logging.debug("_resizeDefSize start")
 		height, width, channels = img.shape[:3]
 		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
 			img = self._resize(img, dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+		logging.debug("_resizeDefSize end")
 		return img
 
 	def _debug(self, mes):
@@ -302,5 +306,7 @@ class BasePlayer():
 		return img
 	
 	def __save(self, frames):
+		logging.debug("__save start")
 		for i, writer in enumerate( self.writers ):
 			writer.write(frames[i][1]) # 画像を1フレーム分として書き込み
+		logging.debug("__save end")
