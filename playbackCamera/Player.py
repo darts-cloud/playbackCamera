@@ -1,4 +1,4 @@
-from BasePlayer import *
+from playbackCamera.BasePlayer import *
 
 class Player(BasePlayer):
 

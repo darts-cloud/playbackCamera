@@ -1,14 +1,13 @@
 import logging
 logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
 from screeninfo import get_monitors
-from enum import IntEnum
+from enum import *
 import fpstimer
-from VideoCapture import *
-import configparser
+from playbackCamera.VideoCapture import *
 import queue
-import sys
 import datetime
-from Settings import *
+from playbackCamera.Settings import *
+import numpy as np
 
 class Mode(IntEnum):
 	ALL = 99
@@ -16,6 +15,10 @@ class Mode(IntEnum):
 	DISP_2 = 1
 	DISP_3 = 2
 	DISP_4 = 3
+
+class WindowSize(Enum):
+	FULL = 0
+	WINDOW = 1
 
 '''
 
@@ -28,6 +31,7 @@ class BasePlayer():
 		self.conf = Settings()
 		self.stopped = False
 		self.Mode = Mode.ALL
+		self.WindowSize = WindowSize.FULL
 		self.fpsCount = CountFps()
 		self.imshowed = False
 		
@@ -53,6 +57,12 @@ class BasePlayer():
 				self.Mode = Mode.DISP_3
 			elif key == ord('4'):
 				self.Mode = Mode.DISP_4
+			elif key == ord('F') or key == ord('f'):
+				self.imshowed = False
+				if self.WindowSize == WindowSize.FULL:
+					self.WindowSize = WindowSize.WINDOW
+				else:
+					self.WindowSize = WindowSize.FULL
 			
 			self.fpsTimer.sleep()
 
@@ -227,7 +237,12 @@ class BasePlayer():
 	def _imshow(self, windowName, img):
 		logging.debug("imshow start")
 		if self.imshowed == False:
-			cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
+			if self.WindowSize == WindowSize.FULL:
+				cv2.namedWindow(windowName, cv2.WND_PROP_FULLSCREEN)
+				cv2.setWindowProperty(windowName,cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+			else:
+				cv2.namedWindow(windowName, cv2.WND_PROP_FULLSCREEN)
+				cv2.setWindowProperty(windowName,cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_NORMAL)
 		self.imshowed = True
 		cv2.imshow(windowName, img)
 		logging.debug("imshow end")
