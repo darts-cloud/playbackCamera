@@ -11,6 +11,8 @@ playbackCameraは、撮影した動画を遅らせて表示するためのソフ
 - PC
 - ネットワークカメラ（一般的には15fpsが主流）
 
+![Contribution guidelines for this project](infomation.drawio.svg)
+
 ### 複数カメラの映像を同時出力:
 このソフトウェアは、最大4台のカメラ映像を同時に出力することが可能です。  
 これにより、ユーザーは異なる角度からの映像を同時に確認することができます。
