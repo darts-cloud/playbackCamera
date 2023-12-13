@@ -1,14 +1,13 @@
 import logging
-logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
 from screeninfo import get_monitors
-from enum import IntEnum
+from enum import *
 import fpstimer
-from VideoCapture import *
-import configparser
+from playbackCamera.VideoCapture import *
 import queue
-import sys
 import datetime
-from Settings import *
+from playbackCamera.Settings import *
+import numpy as np
 
 class Mode(IntEnum):
 	ALL = 99
@@ -16,6 +15,10 @@ class Mode(IntEnum):
 	DISP_2 = 1
 	DISP_3 = 2
 	DISP_4 = 3
+
+class WindowSize(Enum):
+	FULL = 0
+	WINDOW = 1
 
 '''
 
@@ -28,6 +31,7 @@ class BasePlayer():
 		self.conf = Settings()
 		self.stopped = False
 		self.Mode = Mode.ALL
+		self.WindowSize = WindowSize.FULL
 		self.fpsCount = CountFps()
 		self.imshowed = False
 		
@@ -53,6 +57,12 @@ class BasePlayer():
 				self.Mode = Mode.DISP_3
 			elif key == ord('4'):
 				self.Mode = Mode.DISP_4
+			elif key == ord('F') or key == ord('f'):
+				self.imshowed = False
+				if self.WindowSize == WindowSize.FULL:
+					self.WindowSize = WindowSize.WINDOW
+				else:
+					self.WindowSize = WindowSize.FULL
 			
 			self.fpsTimer.sleep()
 
@@ -183,6 +193,7 @@ class BasePlayer():
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			
 			self._imshow('frame', im_h)
+			logging.debug("_useQueue end")
 			return
 
 		if self.queues[0].qsize() < int(self.conf.fps * self.conf.delayTime):
@@ -192,6 +203,7 @@ class BasePlayer():
 			white = (255, 255, 255)
 			cv2.putText(im_h, str, (100, 100), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 1, cv2.LINE_AA)
 			self._imshow('frame', im_h)
+			logging.debug("_useQueue end")
 			return
 		
 		# Queueより動画を取得
@@ -226,7 +238,12 @@ class BasePlayer():
 	def _imshow(self, windowName, img):
 		logging.debug("imshow start")
 		if self.imshowed == False:
-			cv2.namedWindow(windowName, cv2.WINDOW_FULLSCREEN)
+			if self.WindowSize == WindowSize.FULL:
+				cv2.namedWindow(windowName, cv2.WND_PROP_FULLSCREEN)
+				cv2.setWindowProperty(windowName,cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+			else:
+				cv2.namedWindow(windowName, cv2.WND_PROP_FULLSCREEN)
+				cv2.setWindowProperty(windowName,cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_NORMAL)
 		self.imshowed = True
 		cv2.imshow(windowName, img)
 		logging.debug("imshow end")
@@ -250,9 +267,11 @@ class BasePlayer():
 		return img
 
 	def _resizeDefSize(self, img):
+		logging.debug("_resizeDefSize start")
 		height, width, channels = img.shape[:3]
 		if width != self.conf.VIDEO_WIDTH or height != self.conf.VIDEO_HEIGHT:
 			img = self._resize(img, dsize=(self.conf.VIDEO_WIDTH, self.conf.VIDEO_HEIGHT))
+		logging.debug("_resizeDefSize end")
 		return img
 
 	def _debug(self, mes):
@@ -306,5 +325,7 @@ class BasePlayer():
 		return img
 	
 	def __save(self, frames):
+		logging.debug("__save start")
 		for i, writer in enumerate( self.writers ):
 			writer.write(frames[i][1]) # 画像を1フレーム分として書き込み
+		logging.debug("__save end")
