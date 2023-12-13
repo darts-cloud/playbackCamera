@@ -9,7 +9,7 @@ from PerfomanceTestPlayer import *
 
 def main():
 	# cam = OpenGLPlayer()
-	# cam = MediaPipePlayer_Pose() # クッソ遅い
+	# cam = MediaPipePlayer() # クッソ遅い
 	cam = Player() # クッソ遅い
 	# cam = PerfomanceTestPlayer()
 	cam.start()

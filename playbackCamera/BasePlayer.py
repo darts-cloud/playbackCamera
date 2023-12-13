@@ -206,6 +206,7 @@ class BasePlayer():
 				# text = "{} frames in array".format(qs)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
+				frame = self._decorationImage(frame)
 
 				frames.append(frame)
 			except queue.Empty:
@@ -258,6 +259,9 @@ class BasePlayer():
 		if self.DEBUG:
 			logging.debug(mes)
 			print(mes)
+
+	def _decorationImage(self, image):
+		return image
 
 	def __concatImage(self, frames, sizeW, sizeH):
 		logging.debug("__concatImage start")
