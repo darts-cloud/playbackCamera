@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from playbackCamera.Player import *
 # from OpenGLPlayer import *
+# from MediaPipePlayer_hands import *
 # from MediaPipePlayer_pose import *
 # from PerfomanceTestPlayer import *	
 

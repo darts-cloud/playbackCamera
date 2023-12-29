@@ -31,7 +31,7 @@ class BasePlayer():
 		self.conf = Settings()
 		self.stopped = False
 		self.Mode = Mode.ALL
-		self.WindowSize = WindowSize.FULL
+		self.WindowSize = WindowSize.WINDOW
 		self.fpsCount = CountFps()
 		self.imshowed = False
 		
@@ -84,7 +84,7 @@ class BasePlayer():
 		for i, s in enumerate( self.conf.srcs.split(',') ):
 			src = s.strip()
 			if src != "":
-				capture = ThreadingVideoCapture3(src, 1000)
+				capture = ThreadingVideoCaptureForPyAv(src, 1000)
 				if capture.isOpened():
 					self.captures.append( capture )
 					self.queues.append( queue.Queue(maxsize=frames) )
@@ -225,14 +225,14 @@ class BasePlayer():
 				pass
 			
 		# 動画を表示
-		allimg = self.__concatImage(frames, self.conf.sizeW, self.conf.sizeH)
+		allimg = self._concatImage(frames, self.conf.sizeW, self.conf.sizeH)
 		self._show(frames, allimg)
 
 		if len(self.captures) >= 2:
 			frames.append(allimg)
 
 		if self.conf.saveMovie:
-			self.__save(frames)
+			self._save(frames)
 		logging.debug("_useQueue end")
 
 	def _imshow(self, windowName, img):
@@ -282,12 +282,12 @@ class BasePlayer():
 	def _decorationImage(self, image):
 		return image
 
-	def __concatImage(self, frames, sizeW, sizeH):
-		logging.debug("__concatImage start")
+	def _concatImage(self, frames, sizeW, sizeH):
+		logging.debug("_concatImage start")
 		if len(frames) <= 1:
 			img = frames[0]
 			# img = self._resize(img, dsize=(sizeW, sizeH))
-			logging.debug("__concatImage end")
+			logging.debug("_concatImage end")
 			return img
 		
 		img1 = self._resizeDefSize(frames[0])
@@ -307,7 +307,7 @@ class BasePlayer():
 			im_h2 = self.__hconcat([img_tmp, img_tmp])
 			img = self.__vconcat([im_h1, im_h2])
 			# img = im_h1
-		logging.debug("__concatImage end")
+		logging.debug("_concatImage end")
 		return img
 
 	def __hconcat(self, imgs):
@@ -324,8 +324,8 @@ class BasePlayer():
 		logging.debug("__vconcat end")
 		return img
 	
-	def __save(self, frames):
-		logging.debug("__save start")
+	def _save(self, frames):
+		logging.debug("_save start")
 		for i, writer in enumerate( self.writers ):
 			writer.write(frames[i][1]) # 画像を1フレーム分として書き込み
-		logging.debug("__save end")
+		logging.debug("_save end")

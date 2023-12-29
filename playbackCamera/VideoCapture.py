@@ -21,8 +21,11 @@ class ThreadingVideoCapture:
 		if not self.video.isOpened():
 			print("Connect Error.")
 			return
+		
+		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
 
 		print("Connected.")
+		self.bef = None
 		self.q = queue.Queue(maxsize=max_queue_size)
 		self.stopped = False
 		self.fpsCount = CountFps()
@@ -40,7 +43,11 @@ class ThreadingVideoCapture:
 
 			try:
 				if self.stopped:
-					time.sleep(1000)
+					time.sleep(10)
+					self.video = cv2.VideoCapture(self.src)
+					if self.video.isOpened():
+						print("ReConnect.")
+						self.stopped = False
 					continue
 				
 				ret, img = self.video.read()
@@ -59,7 +66,7 @@ class ThreadingVideoCapture:
 				内部的に読み込むことで内部バッファー内の映像を
 				全て吐き出している。
 				"""
-				if not self.q.empty():
+				while not self.q.empty():
 					try:
 						# 常に最新のフレームを読み込む
 						self.q.get_nowait()
@@ -69,14 +76,30 @@ class ThreadingVideoCapture:
 				times = time.time()
 				fps = self.fpsCount.CountFps()
 				self.q.put([times, img, fps])
-			except Exception:
-				pass
+			except Exception as e:
+				print(e)
+				print("通信エラーが発生")
 
 	"""
 	Queueより最新のフレームを取得する。
 	"""
 	def read(self):
-		return self.q.get()
+		if not self.q.empty():
+			try:
+				# 常に最新のフレームを読み込む
+				ret = self.q.get_nowait()
+				# ret[1] = cv2.resize(ret[1], dsize=(640, 480))
+				self.bef = ret
+				return ret
+			except queue.Empty:
+				pass
+
+		if self.bef is None:
+			ret = self.q.get()
+			self.bef = ret
+			return ret
+
+		return self.bef
 	
 	"""映像出力を止める。"""
 	def stop(self):
@@ -103,6 +126,7 @@ class ThreadingVideoCapture:
 		else:
 			return True
 
+import fpstimer
 """
 映像リソースより最新のフレームを読み込むためのクラス
 FPSが異なる複数リソースにアクセスする場合、
@@ -111,62 +135,92 @@ FPSが異なる複数リソースにアクセスする場合、
 class ThreadingVideoCapture2(ThreadingVideoCapture):
 
 	"""コンストラクタ"""
-	def __init__(self, src, max_queue_size=256):
+	def __init__(self, src, fps, max_queue_size=256):
 		super().__init__(src, max_queue_size)
+		self.fpsTimer = fpstimer.FPSTimer(fps)
+
+	""" 
+	ソース元より、常に動画を受け取り、
+	最新の動画のみ、Queueに登録する。
+	別スレッドで実行する。
+	"""
+	def update(self):
+		
+		while True:
+
+			try:
+				if self.stopped:
+					time.sleep(10)
+					self.video = cv2.VideoCapture(self.src)
+					if self.video.isOpened():
+						print("ReConnect.")
+						self.stopped = False
+					continue
+				
+				ret, img = self.video.read()
+				self.fpsCount.CountFrame()
+
+				if not ret:
+					self.stop()
+					print(self.src + ":stop")
+					continue
+				
+				"""
+				OpenCvは内部バッファーを持っている。
+				常に最新のフレームを取得したい場合、
+				このバッファーが邪魔となるため、
+				常に全フレームを読み込み、不要となるフレームを
+				内部的に読み込むことで内部バッファー内の映像を
+				全て吐き出している。
+				"""
+				while not self.q.empty():
+					try:
+						# 常に最新のフレームを読み込む
+						self.q.get_nowait()
+					except queue.Empty:
+						pass
+				
+				times = time.time()
+				fps = self.fpsCount.CountFps()
+
+				height, width, channels = img.shape[:3]
+				white = (255, 255, 255)
+				cv2.putText(img, "{:.2f} fps".format(fps), (  0, height -  10), cv2.FONT_HERSHEY_TRIPLEX, 2, white, 3, cv2.LINE_AA)
+				black = (0, 0, 0)
+				cv2.putText(img, "{:.2f} fps".format(fps), (  0, height -  10), cv2.FONT_HERSHEY_TRIPLEX, 2, black, 1, cv2.LINE_AA)
+
+				self.q.put([times, img, fps])
+			except Exception:
+				pass
+
+			self.fpsTimer.sleep()
+
+import logging
+import av
+logging.basicConfig()
+logging.getLogger('libav').setLevel(logging.ERROR)
+"""
+映像リソースより最新のフレームを読み込むためのクラス
+FPSが異なる複数リソースにアクセスする場合、
+常に最新のフレームを取得することができる。
+"""
+class ThreadingVideoCaptureForPyAv(ThreadingVideoCapture):
+
+	"""コンストラクタ"""
+	def __init__(self, src, max_queue_size=256):
+		print("Connect:" + src)
+		if self._isCameraNo(src):
+			src = int(src, 10)
+		self.src = src
+		self.video = av.open(src)
+		
+		print("Connected.")
 		self.bef = None
-
-	"""
-	Queueより最新のフレームを取得する。
-	"""
-	def read(self):
-		if not self.q.empty():
-			try:
-				# 常に最新のフレームを読み込む
-				ret = self.q.get_nowait()
-				self.bef = ret
-				return ret
-			except queue.Empty:
-				pass
-
-		if self.bef is None:
-			ret = self.q.get()
-			self.bef = ret
-			return ret
-
-		return self.bef
-
-"""
-映像リソースより最新のフレームを読み込むためのクラス
-FPSが異なる複数リソースにアクセスする場合、
-常に最新のフレームを取得することができる。
-"""
-class ThreadingVideoCapture3(ThreadingVideoCapture2):
-
-	"""コンストラクタ"""
-	def __init__(self, src, max_queue_size=256):
-		super().__init__(src, max_queue_size)
-
-	"""
-	Queueより最新のフレームを取得する。
-	"""
-	def read(self):
-		if not self.q.empty():
-			try:
-				# 常に最新のフレームを読み込む
-				ret = self.q.get_nowait()
-				ret[1] = cv2.resize(ret[1], dsize=(640, 480))
-				self.bef = ret
-				return ret
-			except queue.Empty:
-				pass
-
-		if self.bef is None:
-			ret = self.q.get()
-			self.bef = ret
-			return ret
-
-		return self.bef
-
+		self.q = queue.Queue(maxsize=max_queue_size)
+		self.stopped = False
+		self.fpsCount = CountFps()
+		thread = threading.Thread(target=self.update, daemon=True)
+		thread.start()
 
 	""" 
 	ソース元より、常に動画を受け取り、
@@ -175,7 +229,7 @@ class ThreadingVideoCapture3(ThreadingVideoCapture2):
 	"""
 	def update(self):
 		
-		while True:
+		for frame in self.video.decode(video=0):
 
 			try:
 				if self.stopped:
@@ -186,73 +240,8 @@ class ThreadingVideoCapture3(ThreadingVideoCapture2):
 						self.stopped = False
 					continue
 				
-				ret, img = self.video.read()
+				img = frame.to_ndarray(format='bgr24')
 				self.fpsCount.CountFrame()
-
-				if not ret:
-					self.stop()
-					print(self.src + ":stop")
-					continue
-				
-				"""
-				OpenCvは内部バッファーを持っている。
-				常に最新のフレームを取得したい場合、
-				このバッファーが邪魔となるため、
-				常に全フレームを読み込み、不要となるフレームを
-				内部的に読み込むことで内部バッファー内の映像を
-				全て吐き出している。
-				"""
-				if not self.q.empty():
-					try:
-						# 常に最新のフレームを読み込む
-						self.q.get_nowait()
-					except queue.Empty:
-						pass
-				
-				times = time.time()
-				fps = self.fpsCount.CountFps()
-				self.q.put([times, img, fps])
-			except Exception:
-				pass
-
-"""
-映像リソースより最新のフレームを読み込むためのクラス
-FPSが異なる複数リソースにアクセスする場合、
-常に最新のフレームを取得することができる。
-"""
-class ThreadingVideoCapture4(ThreadingVideoCapture3):
-
-	"""コンストラクタ"""
-	def __init__(self, src, max_queue_size=256):
-		super().__init__(src, max_queue_size)
-		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
-
-
-	""" 
-	ソース元より、常に動画を受け取り、
-	最新の動画のみ、Queueに登録する。
-	別スレッドで実行する。
-	"""
-	def update(self):
-		
-		while True:
-
-			try:
-				if self.stopped:
-					time.sleep(10)
-					self.video = cv2.VideoCapture(self.src)
-					if self.video.isOpened():
-						print("ReConnect.")
-						self.stopped = False
-					continue
-				
-				ret, img = self.video.read()
-				self.fpsCount.CountFrame()
-
-				if not ret:
-					self.stop()
-					print(self.src + ":stop")
-					continue
 				
 				"""
 				OpenCvは内部バッファーを持っている。
@@ -271,66 +260,21 @@ class ThreadingVideoCapture4(ThreadingVideoCapture3):
 				
 				times = time.time()
 				fps = self.fpsCount.CountFps()
+
 				self.q.put([times, img, fps])
-			except Exception:
-				pass
 
+			except KeyboardInterrupt:
+				print("KeyboardInterrupt")
+				break
+	
+	"""映像リソースをリリースする。"""
+	def release(self):
+		self.stopped = True
+	
+	"""映像リソースが開けているか、返す。"""
+	def isOpened(self):
+		return True
 
-"""
-映像リソースより最新のフレームを読み込むためのクラス
-FPSが異なる複数リソースにアクセスする場合、
-常に最新のフレームを取得することができる。
-"""
-class ThreadingVideoCapture5(ThreadingVideoCapture4):
-
-	"""コンストラクタ"""
-	def __init__(self, src, max_queue_size=256):
-		super().__init__(src, max_queue_size)
-
-
-	""" 
-	ソース元より、常に動画を受け取り、
-	最新の動画のみ、Queueに登録する。
-	別スレッドで実行する。
-	"""
-	def update(self):
-		
-		while True:
-
-			try:
-				if self.stopped:
-					time.sleep(10)
-					self.video = cv2.VideoCapture(self.src)
-					if self.video.isOpened():
-						print("ReConnect.")
-						self.stopped = False
-					continue
-				
-				ret, img = self.video.read()
-				self.fpsCount.CountFrame()
-
-				if not ret:
-					self.stop()
-					print(self.src + ":stop")
-					continue
-				
-				"""
-				OpenCvは内部バッファーを持っている。
-				常に最新のフレームを取得したい場合、
-				このバッファーが邪魔となるため、
-				常に全フレームを読み込み、不要となるフレームを
-				内部的に読み込むことで内部バッファー内の映像を
-				全て吐き出している。
-				"""
-				while not self.q.empty():
-					try:
-						# 常に最新のフレームを読み込む
-						self.q.get_nowait()
-					except queue.Empty:
-						pass
-				
-				times = time.time()
-				fps = self.fpsCount.CountFps()
-				self.q.put([times, img, fps])
-			except Exception:
-				pass
+	"""OpenCvで取得できる映像リソース情報を返す。"""
+	def get(self, i):
+		return ""
