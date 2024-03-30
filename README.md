@@ -19,3 +19,15 @@ playbackCameraは、撮影した動画を遅らせて表示するためのソフ
 このソフトウェアは、最大4台のカメラ映像を同時に出力することが可能です。  
 これにより、ユーザーは異なる角度からの映像を同時に確認することができます。
 
+## インストール方法について
+### Windows
+Anacondaにて仮想環境を構築
+'''
+winget install --id Anaconda.Anaconda3 -e
+'''
+コマンドプロンプトを開きなおす。
+'''
+conda create --name playbackcamera
+conda activate playbackcamera
+install.bat
+'''
