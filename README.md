@@ -22,12 +22,12 @@ playbackCameraは、撮影した動画を遅らせて表示するためのソフ
 ## インストール方法について
 ### Windows
 Anacondaにて仮想環境を構築
-'''
+```
 winget install --id Anaconda.Anaconda3 -e
-'''
+```
 コマンドプロンプトを開きなおす。
-'''
+```
 conda create --name playbackcamera
 conda activate playbackcamera
 install.bat
-'''
+```
