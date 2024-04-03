@@ -21,6 +21,10 @@ playbackCameraは、撮影した動画を遅らせて表示するためのソフ
 
 ## インストール方法について
 ### Windows
+Gitが入っていない場合はGitをインストール
+```
+winget install --id Git.Git -e --source winget
+```
 Anacondaにて仮想環境を構築
 ```
 winget install --id Anaconda.Anaconda3 -e
