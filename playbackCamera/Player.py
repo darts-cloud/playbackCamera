@@ -9,7 +9,7 @@ class Player(BasePlayer):
 		for i, s in enumerate( self.conf.srcs.split(',') ):
 			src = s.strip()
 			if src != "":
-				capture = ThreadingVideoCaptureForPyAv(src, 1000)
+				capture = ThreadingVideoCapture(src, 1000)
 				if capture.isOpened():
 					self.captures.append( capture )
 					self.queues.append( queue.Queue(maxsize=frames) )
