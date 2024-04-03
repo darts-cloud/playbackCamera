@@ -1,6 +1,5 @@
 import logging
 logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
-from screeninfo import get_monitors
 from enum import *
 import fpstimer
 from playbackCamera.VideoCapture import *

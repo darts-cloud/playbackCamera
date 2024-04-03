@@ -26,11 +26,11 @@ class Settings():
 		self._loadIniFile()
 		self.dispSizeH = None
 		self.dispSizeW = None
-		for m in get_monitors():
-			self.dispSizeH = m.height
-			self.dispSizeW = m.width
-			print(str(m))
-			break
+		# for m in get_monitors():
+		# 	self.dispSizeH = m.height
+		# 	self.dispSizeW = m.width
+		# 	print(str(m))
+		# 	break
 		
 		if self.dispSizeH is None:
 			self.dispSizeH = self.sizeH

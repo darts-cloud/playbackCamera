@@ -9,7 +9,6 @@ import configparser
 import queue
 import sys
 from playbackCamera.CountFps import *
-from screeninfo import get_monitors
 import fpstimer
 import mediapipe as mp
 
