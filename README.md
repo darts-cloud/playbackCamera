@@ -29,6 +29,11 @@ Anacondaにて仮想環境を構築
 ```
 winget install --id Anaconda.Anaconda3 -e
 ```
+以下のメッセージが出たら、Yを入力
+
+すべてのソース契約条件に同意しますか?
+[Y] はい  [N] いいえ: y
+
 コマンドプロンプトを開きなおす。
 ```
 conda create --name playbackcamera
