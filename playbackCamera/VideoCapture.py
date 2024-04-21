@@ -41,7 +41,7 @@ class ThreadingVideoCapture:
 	"""
 	def update(self):
 
-		self._load()
+		# self._load()
 		while True:
 			try:
 				if self.stopped:
@@ -50,7 +50,7 @@ class ThreadingVideoCapture:
 					if self.video.isOpened():
 						print("ReConnect.")
 						self.stopped = False
-						self._load()
+						# self._load()
 					continue
 				
 				ret, img = self.video.read()
@@ -90,6 +90,8 @@ class ThreadingVideoCapture:
 		if not self.q.empty():
 			try:
 				ret = self.q.get_nowait()
+				while self.q.qsize() > 1:
+					ret = self.q.get_nowait()
 
 				# self.bef = retNA
 				self.bef = [ret[0], cv2.flip(ret[1], 1), ret[2]]
