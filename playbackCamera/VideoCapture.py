@@ -22,7 +22,9 @@ class ThreadingVideoCapture:
 			print("Connect Error.")
 			return
 		
+		self.max_queue_size = max_queue_size
 		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
+		self.video.set(cv2.CAP_PROP_FPS, 30) 
 
 		print("Connected.")
 		self.bef = None
@@ -38,9 +40,9 @@ class ThreadingVideoCapture:
 	別スレッドで実行する。
 	"""
 	def update(self):
-		
-		while True:
 
+		self._load()
+		while True:
 			try:
 				if self.stopped:
 					time.sleep(10)
@@ -48,6 +50,7 @@ class ThreadingVideoCapture:
 					if self.video.isOpened():
 						print("ReConnect.")
 						self.stopped = False
+						self._load()
 					continue
 				
 				ret, img = self.video.read()
@@ -58,27 +61,27 @@ class ThreadingVideoCapture:
 					print(self.src + ":stop")
 					continue
 				
-				"""
-				OpenCvは内部バッファーを持っている。
-				常に最新のフレームを取得したい場合、
-				このバッファーが邪魔となるため、
-				常に全フレームを読み込み、不要となるフレームを
-				内部的に読み込むことで内部バッファー内の映像を
-				全て吐き出している。
-				"""
-				while not self.q.empty():
-					try:
-						# 常に最新のフレームを読み込む
-						self.q.get_nowait()
-					except queue.Empty:
-						pass
-				
 				times = time.time()
 				fps = self.fpsCount.CountFps()
 				self.q.put([times, img, fps])
+				# print(fps)
+
 			except Exception as e:
 				print(e)
 				print("通信エラーが発生")
+
+
+	"""
+	OpenCvは内部バッファーを持っている。
+	常に最新のフレームを取得したい場合、
+	このバッファーが邪魔となるため、
+	常に全フレームを読み込み、不要となるフレームを
+	内部的に読み込むことで内部バッファー内の映像を
+	全て吐き出している。
+	"""
+	def _load(self):
+		for i in range(10):
+			ret, img = self.video.read()
 
 	"""
 	Queueより最新のフレームを取得する。
@@ -86,10 +89,10 @@ class ThreadingVideoCapture:
 	def read(self):
 		if not self.q.empty():
 			try:
-				# 常に最新のフレームを読み込む
 				ret = self.q.get_nowait()
-				# ret[1] = cv2.resize(ret[1], dsize=(640, 480))
-				self.bef = ret
+
+				# self.bef = retNA
+				self.bef = [ret[0], cv2.flip(ret[1], 1), ret[2]]
 				return ret
 			except queue.Empty:
 				pass
@@ -214,6 +217,8 @@ class ThreadingVideoCaptureForPyAv(ThreadingVideoCapture):
 		self.src = src
 		self.video = av.open(src)
 		
+		self.max_queue_size = max_queue_size
+
 		print("Connected.")
 		self.bef = None
 		self.q = queue.Queue(maxsize=max_queue_size)
@@ -242,22 +247,7 @@ class ThreadingVideoCaptureForPyAv(ThreadingVideoCapture):
 				
 				img = frame.to_ndarray(format='bgr24')
 				self.fpsCount.CountFrame()
-				
-				"""
-				OpenCvは内部バッファーを持っている。
-				常に最新のフレームを取得したい場合、
-				このバッファーが邪魔となるため、
-				常に全フレームを読み込み、不要となるフレームを
-				内部的に読み込むことで内部バッファー内の映像を
-				全て吐き出している。
-				"""
-				while not self.q.empty():
-					try:
-						# 常に最新のフレームを読み込む
-						self.q.get_nowait()
-					except queue.Empty:
-						pass
-				
+								
 				times = time.time()
 				fps = self.fpsCount.CountFps()
 
@@ -267,6 +257,18 @@ class ThreadingVideoCaptureForPyAv(ThreadingVideoCapture):
 				print("KeyboardInterrupt")
 				break
 	
+	# """
+	# OpenCvは内部バッファーを持っている。
+	# 常に最新のフレームを取得したい場合、
+	# このバッファーが邪魔となるため、
+	# 常に全フレームを読み込み、不要となるフレームを
+	# 内部的に読み込むことで内部バッファー内の映像を
+	# 全て吐き出している。
+	# """
+	# def _load(self):
+	# 	for i in range(10):
+	# 		ret, img = self.video.read()
+
 	"""映像リソースをリリースする。"""
 	def release(self):
 		self.stopped = True
