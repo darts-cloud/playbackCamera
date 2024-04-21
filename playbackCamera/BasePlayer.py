@@ -104,7 +104,7 @@ class BasePlayer():
 			self.writers.append(writer)
 
 	def _show(self, frames, allimg):
-		logging.debug("show start")
+		logging.debug("_show start")
 		img = None
 		# fps1 = 0
 		fps2 = 0
@@ -120,7 +120,7 @@ class BasePlayer():
 		if img is None:
 			img = allimg
 		
-		img = self._resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
+		# img = self._resize(img, dsize=(self.conf.dispSizeW, self.conf.dispSizeH))
 
 		if self.conf.glidLineFlg:
 			alpha = 0.2
@@ -140,9 +140,10 @@ class BasePlayer():
 		self.img = img
 		# 高解像度で表示すると描画が遅いことが判明
 		self._imshow('frame', img)
-		logging.debug("show end")
+		logging.debug("_show end")
 
 	def _drawGlidLine(self, img):
+		logging.debug("_drawGlidLine start")
 		alpha = 0.3
 		y_step = 40 #高さ方向のグリッド間隔(単位はピクセル)
 		x_step = 40 #幅方向のグリッド間隔(単位はピクセル)
@@ -168,6 +169,7 @@ class BasePlayer():
 
 		# img = cv2.addWeighted(tmp, alpha, img, 1 - alpha, 0, img)
 
+		logging.debug("_drawGlidLine end")
 		return tmp
 
 	def _addQueue(self):
@@ -211,10 +213,12 @@ class BasePlayer():
 		black = (0, 0, 0)
 		for i, queue in enumerate( self.queues ):
 			try:
-				frame = queue.get_nowait()[1]
+				q = queue.get_nowait()
+				frame = q[1]
+				# fps = q[2]
 				# debug
 				# qs = queue.qsize()
-				# text = "{} frames in array".format(qs)
+				# text = "{} frames in array, {}fps".format(qs, fps)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 				frame = self._decorationImage(frame)

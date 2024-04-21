@@ -44,9 +44,10 @@ class RealtimePlayer(BasePlayer):
 		for i, queue in enumerate( self.queues ):
 			try:
 				frame = queue[1]
+				# fps = queue[2]
 				# debug
 				# qs = queue.qsize()
-				# text = "{} frames in array".format(qs)
+				# text = "{} frames in array, {}fps".format(qs, fps)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, white, 3, cv2.LINE_AA)
 				# cv2.putText(frame, text, (  0, 20), cv2.FONT_HERSHEY_TRIPLEX, 1, black, 1, cv2.LINE_AA)
 				frame = self._decorationImage(frame)
