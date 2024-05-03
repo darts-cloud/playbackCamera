@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 import time
 import datetime
-from VideoCapture import *
-from Player import *
+from playbackCamera.capture.VideoCapture import *
+from playbackCamera.player.Player import *
 import json
 import configparser
 import queue
 import sys
-from playbackCamera.CountFps import *
+from playbackCamera.util.CountFps import *
 import fpstimer
 import mediapipe as mp
 

@@ -4,7 +4,7 @@ import time
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from playbackCamera.VideoCapture import ThreadingVideoCapture, ThreadingVideoCaptureV2, ThreadingVideoCaptureV3, ThreadingVideoCaptureV2_1
+from playbackCamera.capture.VideoCapture import ThreadingVideoCapture, ThreadingVideoCaptureV2, ThreadingVideoCaptureV3, ThreadingVideoCaptureV2_1
 import json
 import configparser
 import queue

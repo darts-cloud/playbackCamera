@@ -1,11 +1,11 @@
 import logging
-logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s:%(message)s', level=logging.WARNING)
 from enum import *
 import fpstimer
-from playbackCamera.VideoCapture import *
+from playbackCamera.capture.VideoCapture import *
 import queue
 import datetime
-from playbackCamera.Settings import *
+from playbackCamera.util.Settings import *
 import numpy as np
 
 class Mode(IntEnum):

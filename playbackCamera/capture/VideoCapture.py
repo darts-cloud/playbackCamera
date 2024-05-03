@@ -2,7 +2,7 @@ import threading
 import queue
 import cv2
 import time
-from playbackCamera.CountFps import *
+from playbackCamera.util.CountFps import *
 
 """
 映像リソースより最新のフレームを読み込むためのクラス
@@ -13,18 +13,20 @@ class ThreadingVideoCapture:
 
 	"""コンストラクタ"""
 	def __init__(self, src, max_queue_size=256):
-		print("Connect:" + src)
-		if self._isCameraNo(src):
-			src = int(src, 10)
-		self.src = src
-		self.video = cv2.VideoCapture(src)
-		if not self.video.isOpened():
-			print("Connect Error.")
-			return
+		if src is not None:
+			print("Connect:" + src)
+			if self._isCameraNo(src):
+				src = int(src, 10)
+			self.src = src
+
+			self.video = cv2.VideoCapture(src)
+			self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
+			self.video.set(cv2.CAP_PROP_FPS, 30) 
+			if not self.video.isOpened():
+				print("Connect Error.")
+				return
 		
 		self.max_queue_size = max_queue_size
-		self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
-		self.video.set(cv2.CAP_PROP_FPS, 30) 
 
 		print("Connected.")
 		self.bef = None
@@ -44,6 +46,7 @@ class ThreadingVideoCapture:
 		# self._load()
 		while True:
 			try:
+				logging.warning(f"{self.src}: update start")
 				if self.stopped:
 					time.sleep(10)
 					self.video = cv2.VideoCapture(self.src)
@@ -53,7 +56,9 @@ class ThreadingVideoCapture:
 						# self._load()
 					continue
 				
+				logging.warning(f"{self.src}: read start")
 				ret, img = self.video.read()
+				logging.warning(f"{self.src}: read end")
 				self.fpsCount.CountFrame()
 
 				if not ret:
@@ -65,6 +70,7 @@ class ThreadingVideoCapture:
 				fps = self.fpsCount.CountFps()
 				self.q.put([times, img, fps])
 				# print(fps)
+				logging.warning(f"{self.src}: update end")
 
 			except Exception as e:
 				print(e)
@@ -79,9 +85,9 @@ class ThreadingVideoCapture:
 	内部的に読み込むことで内部バッファー内の映像を
 	全て吐き出している。
 	"""
-	def _load(self):
-		for i in range(10):
-			ret, img = self.video.read()
+	def load(self):
+		while not self.q.empty():
+			ret = self.q.get_nowait()
 
 	"""
 	Queueより最新のフレームを取得する。
@@ -90,11 +96,9 @@ class ThreadingVideoCapture:
 		if not self.q.empty():
 			try:
 				ret = self.q.get_nowait()
-				while self.q.qsize() > 1:
-					ret = self.q.get_nowait()
 
-				# self.bef = retNA
-				self.bef = [ret[0], cv2.flip(ret[1], 1), ret[2]]
+				# self.bef = ret
+				self.bef = [ret[0], cv2.bitwise_not(ret[1]), ret[2]]
 				return ret
 			except queue.Empty:
 				pass

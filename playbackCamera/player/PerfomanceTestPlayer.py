@@ -1,4 +1,4 @@
-from BasePlayer import *
+from playbackCamera.player.BasePlayer import *
 
 class PerfomanceTestPlayer(BasePlayer):
 

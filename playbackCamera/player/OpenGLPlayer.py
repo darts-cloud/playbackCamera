@@ -1,8 +1,8 @@
-from playbackCamera.CountFps import *
+from playbackCamera.util.CountFps import *
 import cv2
 import numpy as np
 import datetime
-from VideoCapture import *
+from playbackCamera.capture.VideoCapture import *
 import configparser
 import queue
 import sys

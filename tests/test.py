@@ -1,5 +1,5 @@
 import cv2
-from CountFps import *
+from playbackCamera.util.CountFps import *
 
 #カメラの設定　デバイスIDは0
 cap = cv2.VideoCapture("rtsp://192.168.1.111")
